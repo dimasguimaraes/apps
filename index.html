@@ -31,6 +31,8 @@
       --red-soft: rgba(239, 68, 68, 0.16);
       --cyan: #06b6d4;
       --cyan-soft: rgba(6, 182, 212, 0.16);
+      --blue: #3b82f6;
+      --blue-soft: rgba(59, 130, 246, 0.16);
       --purple: #a855f7;
       --purple-soft: rgba(168, 85, 247, 0.16);
     }
@@ -105,6 +107,11 @@
       color: var(--green);
       background: var(--green-soft);
     }
+    .pill.cached {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-soft);
+    }
     .btn-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -152,6 +159,11 @@
       background: var(--cyan-soft);
       border-color: var(--cyan);
       color: #cffafe;
+    }
+    .btn-blue {
+      background: var(--blue-soft);
+      border-color: var(--blue);
+      color: #bfdbfe;
     }
     .card {
       background: var(--card);
@@ -238,7 +250,7 @@
       margin-top: 8px;
     }
     svg { width: 100%; height: 115px; display: block; }
-    /* ClimbPro & DescentPro */
+    /* ClimbPro, DescentPro & Weather */
     .radar-grid {
       display: grid;
       grid-template-columns: 1fr;
@@ -261,6 +273,11 @@
       background: var(--cyan-soft);
       border-color: var(--cyan);
     }
+    .radar-box.weather { border-left: 4px solid var(--blue); }
+    .radar-box.weather.alert-now {
+      background: var(--blue-soft);
+      border-color: var(--blue);
+    }
     .radar-header {
       display: flex;
       justify-content: space-between;
@@ -268,9 +285,10 @@
       font-size: 12px;
       font-weight: 800;
       text-transform: uppercase;
+      gap: 6px;
     }
     .radar-main {
-      font-size: 18px;
+      font-size: 17px;
       font-weight: 800;
       margin: 6px 0 4px 0;
     }
@@ -279,6 +297,21 @@
       color: var(--muted);
       line-height: 1.4;
     }
+    .weather-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-top: 8px;
+    }
+    .w-mini {
+      background: #0b1120;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 6px;
+      text-align: center;
+    }
+    .w-mini .v { font-size: 13px; font-weight: 800; }
+    .w-mini .l { font-size: 10px; color: var(--muted); }
     .progress-bar {
       width: 100%;
       height: 8px;
@@ -393,6 +426,7 @@
       padding: 8px 0;
       border-bottom: 1px solid var(--border);
       font-size: 13px;
+      gap: 8px;
     }
     .cfg-row:last-child { border-bottom: none; }
     .cfg-row input, .cfg-row select {
@@ -450,7 +484,7 @@
       line-height: 1.35;
     }
     .log-list {
-      max-height: 140px;
+      max-height: 150px;
       overflow-y: auto;
       font-size: 12px;
       color: var(--muted);
@@ -524,6 +558,7 @@
           <div class="status-row">
             <span id="gpsPill" class="pill">● GPS Aguardando</span>
             <span id="voicePill" class="pill">🔇 Toque em Testar Voz</span>
+            <span id="netPill" class="pill">🌐 Verificando Rede</span>
           </div>
         </div>
       </div>
@@ -612,8 +647,36 @@
     </div>
   </div>
 
-  <!-- RADAR CLIMBPRO & DESCENTPRO -->
+  <!-- RADAR METEOROLÓGICO INTELIGENTE -->
   <div class="radar-grid">
+    <div id="weatherBox" class="radar-box weather">
+      <div class="radar-header">
+        <span style="color:var(--blue)">⛈️ Radar Chuva &amp; Vento (&ge; <span id="lblRainThresh">70</span>%)</span>
+        <span id="weatherSourceTag" class="pill" style="font-size:10px">Sincronizando...</span>
+      </div>
+      <div class="radar-main" id="weatherMain">Sem tempestade forte prevista à frente</div>
+      <div class="radar-sub" id="weatherSub">Monitorando pontos 30–45 min à frente no traçado. Avisos disparam apenas com risco elevado.</div>
+      <div class="weather-grid">
+        <div class="w-mini">
+          <div class="v" id="wProbVal">--%</div>
+          <div class="l">CHUVA À FRENTE</div>
+        </div>
+        <div class="w-mini">
+          <div class="v" id="wWindVal">-- km/h</div>
+          <div class="l">RAJADA VENTO</div>
+        </div>
+        <div class="w-mini">
+          <div class="v" id="wCacheAge">--</div>
+          <div class="l">ÚLT. ATUALIZ.</div>
+        </div>
+      </div>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn-blue" style="padding:7px;font-size:12px" onclick="syncRouteWeather(true)">🔄 Atualizar Radar Agora</button>
+        <button style="padding:7px;font-size:12px" onclick="simulateWeatherAlert()">🧪 Testar Alerta Chuva/Cache</button>
+      </div>
+    </div>
+
+    <!-- RADAR CLIMBPRO -->
     <div id="climbBox" class="radar-box climb">
       <div class="radar-header">
         <span style="color:var(--red)">⛰️ Radar ClimbPro (Subidas &ge; <span id="lblMinGradeUp">6</span>%)</span>
@@ -628,6 +691,7 @@
       </details>
     </div>
 
+    <!-- RADAR DESCENTPRO -->
     <div id="descentBox" class="radar-box descent">
       <div class="radar-header">
         <span style="color:var(--cyan)">🪂 Radar DescentPro (Descidas &le; -<span id="lblMinGradeDown">6</span>%)</span>
@@ -717,6 +781,14 @@
       </div>
     </div>
     <div class="cfg-row">
+      <span>Probabilidade mínima chuva p/ avisar (%)</span>
+      <input type="number" id="cfgRainProb" value="70" min="30" max="100" style="width:70px;text-align:center" onchange="saveSettings(); updateUI();" />
+    </div>
+    <div class="cfg-row">
+      <span>Rajada vento forte p/ avisar (km/h)</span>
+      <input type="number" id="cfgWindThresh" value="35" min="15" max="80" style="width:70px;text-align:center" onchange="saveSettings(); updateUI();" />
+    </div>
+    <div class="cfg-row">
       <span>Antecedência do aviso de rampa</span>
       <select id="cfgLookahead" onchange="saveSettings()">
         <option value="0.5">500 metros antes</option>
@@ -770,33 +842,39 @@
 </div>
 
 <script>
-// ================= PERFIS OFICIAIS ROTA DA LUZ =================
+// ================= PERFIS OFICIAIS ROTA DA LUZ (COM COORDENADAS REAIS) =================
 const DAY1_PROFILE = [
-  [0,740],[4,735],[8,750],[12,720],[16,690],[20,670],[26.4,665], // Guararema
-  [30,680],[34,740],[38,710],[42,670],[46.4,645], // Santa Branca
-  [50,660],[54,785],[57,710],[61,830],[64,740],[68,890],[71,790],[75,860],[79,720],[84.7,635], // Paraibuna
-  [88,655],[92,810],[95,740],[99,885],[102,790],[106,920],[109,810],[112,845],[115.0,735] // Redenção (Pousada Marlene)
+  [0, 740, -23.5225, -46.1856],      // Estação Estudantes (Mogi)
+  [12, 720, -23.4710, -46.1120],
+  [26.4, 665, -23.4150, -46.0361],   // Guararema
+  [46.4, 645, -23.3975, -45.8850],   // Santa Branca
+  [64, 740, -23.3910, -45.7620],
+  [84.7, 635, -23.3861, -45.6622],   // Paraibuna
+  [99, 885, -23.3310, -45.6010],
+  [115.0, 735, -23.2686, -45.5369]   // Redenção da Serra (Pousada da Marlene)
 ];
 
 const DAY2_PROFILE = [
-  [0,735],[3.5,860],[7,760],[11,935],[14.5,810],[18.5,965],[22,820],[26,890],[30,680],[34,630],[37.8,585], // Taubaté
-  [43,575],[49,565],[55,560],[59.6,555], // Pindamonhangaba
-  [66,550],[73,545],[79.0,542], // Roseira
-  [83,565],[86.6,595] // Aparecida (Basílica)
+  [0, 735, -23.2686, -45.5369],      // Redenção da Serra
+  [18.5, 965, -23.1510, -45.5480],   // Alto da Serra
+  [37.8, 585, -23.0264, -45.5553],   // Taubaté
+  [59.6, 555, -22.9239, -45.4617],   // Pindamonhangaba
+  [79.0, 542, -22.8981, -45.3044],   // Roseira
+  [86.6, 595, -22.8492, -45.2336]    // Aparecida (Basílica)
 ];
 
 const CHECKPOINTS = {
   1: [
-    { name: "Guararema", km: 26.4, offsetMin: 110 }, // 08:50 saindo 07:00
-    { name: "Santa Branca", km: 46.4, offsetMin: 215 }, // 10:35
-    { name: "Paraibuna (Corte)", km: 84.7, offsetMin: 420 }, // 14:00
-    { name: "Pousada da Marlene", km: 115.0, offsetMin: 675 } // 18:15
+    { name: "Guararema", km: 26.4, offsetMin: 110, lat: -23.4150, lon: -46.0361 },
+    { name: "Santa Branca", km: 46.4, offsetMin: 215, lat: -23.3975, lon: -45.8850 },
+    { name: "Paraibuna (Corte)", km: 84.7, offsetMin: 420, lat: -23.3861, lon: -45.6622 },
+    { name: "Pousada da Marlene", km: 115.0, offsetMin: 675, lat: -23.2686, lon: -45.5369 }
   ],
   2: [
-    { name: "Taubaté (Fim da Serra)", km: 37.8, offsetMin: 255 }, // 11:15 saindo 07:00
-    { name: "Pindamonhangaba", km: 59.6, offsetMin: 375 }, // 13:15
-    { name: "Roseira", km: 79.0, offsetMin: 480 }, // 15:00
-    { name: "Basílica de Aparecida", km: 86.6, offsetMin: 540 } // 16:00
+    { name: "Taubaté (Fim da Serra)", km: 37.8, offsetMin: 255, lat: -23.0264, lon: -45.5553 },
+    { name: "Pindamonhangaba", km: 59.6, offsetMin: 375, lat: -22.9239, lon: -45.4617 },
+    { name: "Roseira", km: 79.0, offsetMin: 480, lat: -22.8981, lon: -45.3044 },
+    { name: "Basílica de Aparecida", km: 86.6, offsetMin: 540, lat: -22.8492, lon: -45.2336 }
   ]
 };
 
@@ -810,22 +888,25 @@ let state = {
   currentSpeed: 13.5,
   elapsedSec: 0,
   voiceUnlocked: false,
-  voiceStyle: 'cinema', // 'cinema' | 'tech'
+  voiceStyle: 'cinema',
   wakeLock: null,
   simPlaying: false,
   gpsWatchId: null,
   lastGpsPos: null,
-  speedHistory: [],
   announcedClimbs: new Set(),
   announcedClimbMid: new Set(),
   announcedClimbTop: new Set(),
   announcedDescents: new Set(),
   announcedDescentEnd: new Set(),
   lastPaceCheckSec: 0,
+  lastWeatherAlertKey: '',
+  weatherCache: null,
   intervals: { water: 20, iso: 30, banana: 35, gel: 45 },
   timers: { water: 20*60, iso: 30*60, banana: 35*60, gel: 45*60 },
   cfg: {
     minGrade: 6,
+    rainProbThresh: 70,
+    windThresh: 35,
     lookaheadKm: 1.0,
     startTime: "07:00",
     caffeineCutoffMin: 90,
@@ -837,22 +918,43 @@ let state = {
 function init() {
   loadSettings();
   selectDay(state.day, true);
+  updateNetworkBadge();
+  window.addEventListener('online', () => { updateNetworkBadge(); syncRouteWeather(false); });
+  window.addEventListener('offline', updateNetworkBadge);
+  syncRouteWeather(false);
   setInterval(tickSecond, 1000);
+  setInterval(() => syncRouteWeather(false), 15 * 60 * 1000);
+}
+
+function updateNetworkBadge() {
+  const pill = document.getElementById('netPill');
+  if (navigator.onLine) {
+    pill.textContent = '🌐 Online (Radar Ativo)';
+    pill.className = 'pill active';
+  } else {
+    pill.textContent = '📴 Offline (Usando Cache)';
+    pill.className = 'pill cached';
+  }
 }
 
 function loadSettings() {
   try {
-    const saved = JSON.parse(localStorage.getItem('rota_luz_cfg_v4'));
+    const saved = JSON.parse(localStorage.getItem('rota_luz_cfg_v5'));
     if (saved) {
       Object.assign(state.cfg, saved.cfg || {});
       Object.assign(state.intervals, saved.intervals || {});
       state.voiceStyle = saved.voiceStyle || 'cinema';
     }
+    const wCache = JSON.parse(localStorage.getItem('rota_luz_weather_cache'));
+    if (wCache) state.weatherCache = wCache;
   } catch (e) {}
+
   ['water','iso','banana','gel'].forEach(k => {
     document.getElementById('int-' + k).value = state.intervals[k];
     state.timers[k] = state.intervals[k] * 60;
   });
+  document.getElementById('cfgRainProb').value = state.cfg.rainProbThresh;
+  document.getElementById('cfgWindThresh').value = state.cfg.windThresh;
   document.getElementById('cfgLookahead').value = state.cfg.lookaheadKm.toFixed(1);
   document.getElementById('cfgStartTime').value = state.cfg.startTime;
   document.getElementById('cfgCaffeineCutoff').value = state.cfg.caffeineCutoffMin;
@@ -862,11 +964,14 @@ function loadSettings() {
 }
 
 function saveSettings() {
+  state.cfg.rainProbThresh = Math.min(100, Math.max(30, parseInt(document.getElementById('cfgRainProb').value) || 70));
+  state.cfg.windThresh = Math.max(15, parseInt(document.getElementById('cfgWindThresh').value) || 35);
   state.cfg.lookaheadKm = parseFloat(document.getElementById('cfgLookahead').value) || 1.0;
   state.cfg.startTime = document.getElementById('cfgStartTime').value || "07:00";
   state.cfg.caffeineCutoffMin = parseInt(document.getElementById('cfgCaffeineCutoff').value) || 90;
   state.cfg.paceIntervalMin = parseInt(document.getElementById('cfgPaceInterval').value) || 20;
-  localStorage.setItem('rota_luz_cfg_v4', JSON.stringify({
+  document.getElementById('lblRainThresh').textContent = state.cfg.rainProbThresh;
+  localStorage.setItem('rota_luz_cfg_v5', JSON.stringify({
     cfg: state.cfg,
     intervals: state.intervals,
     voiceStyle: state.voiceStyle
@@ -885,6 +990,7 @@ function setMinGrade(val) {
 function updateGradeChips() {
   document.getElementById('lblMinGradeUp').textContent = state.cfg.minGrade;
   document.getElementById('lblMinGradeDown').textContent = state.cfg.minGrade;
+  document.getElementById('lblRainThresh').textContent = state.cfg.rainProbThresh;
   document.querySelectorAll('#gradeChips .chip').forEach(btn => {
     btn.classList.toggle('active', parseInt(btn.textContent) === state.cfg.minGrade);
   });
@@ -894,19 +1000,23 @@ function updateGradeChips() {
 function densifyProfile(rawPts) {
   const dense = [];
   for (let i = 0; i < rawPts.length - 1; i++) {
-    const [k1, e1] = rawPts[i];
-    const [k2, e2] = rawPts[i + 1];
+    const [k1, e1, lat1, lon1] = rawPts[i];
+    const [k2, e2, lat2, lon2] = rawPts[i + 1];
     const dist = k2 - k1;
-    const steps = Math.max(1, Math.round(dist / 0.05)); // 50m step
+    const steps = Math.max(1, Math.round(dist / 0.05));
     for (let s = 0; s < steps; s++) {
       const t = s / steps;
-      // leve ondulação realista nos estradões
       const wave = Math.sin((k1 + dist * t) * 4.5) * 4;
-      dense.push({ km: k1 + dist * t, elev: e1 + (e2 - e1) * t + wave });
+      dense.push({
+        km: k1 + dist * t,
+        elev: e1 + (e2 - e1) * t + wave,
+        lat: lat1 + (lat2 - lat1) * t,
+        lon: lon1 + (lon2 - lon1) * t
+      });
     }
   }
   const last = rawPts[rawPts.length - 1];
-  dense.push({ km: last[0], elev: last[1] });
+  dense.push({ km: last[0], elev: last[1], lat: last[2], lon: last[3] });
   return dense;
 }
 
@@ -917,6 +1027,7 @@ function selectDay(day, silent = false) {
   document.getElementById('routeSourceBadge').textContent = 'Traçado Oficial';
   state.points = densifyProfile(day === 1 ? DAY1_PROFILE : DAY2_PROFILE);
   resetProgress();
+  syncRouteWeather(false);
   if (!silent) addLog(`Etapa alterada para Dia ${day} (${getTotalKm().toFixed(1)} km).`);
 }
 
@@ -939,15 +1050,14 @@ function handleGPXUpload(ev) {
       const lon = parseFloat(pt.getAttribute("lon"));
       const eleNode = pt.querySelector("ele");
       const ele = eleNode ? parseFloat(eleNode.textContent) : 600;
-      if (prevLat !== null) {
-        totalKm += haversine(prevLat, prevLon, lat, lon);
-      }
+      if (prevLat !== null) totalKm += haversine(prevLat, prevLon, lat, lon);
       pts.push({ km: totalKm, elev: ele, lat, lon });
       prevLat = lat; prevLon = lon;
     });
     state.points = pts;
     document.getElementById('routeSourceBadge').textContent = `GPX: ${file.name.slice(0,16)}`;
     resetProgress();
+    syncRouteWeather(false);
     addLog(`GPX carregado: ${totalKm.toFixed(1)} km (${pts.length} pontos).`);
   };
   reader.readAsText(file);
@@ -974,6 +1084,7 @@ function resetProgress() {
   state.announcedDescents.clear();
   state.announcedDescentEnd.clear();
   state.lastPaceCheckSec = 0;
+  state.lastWeatherAlertKey = '';
   const maxKm = getTotalKm();
   const slider = document.getElementById('simSlider');
   slider.max = maxKm.toFixed(1);
@@ -983,6 +1094,155 @@ function resetProgress() {
   updateUI();
 }
 
+// ================= RADAR METEOROLÓGICO (OPEN-METEO + CACHE OFFLINE) =================
+async function syncRouteWeather(manualClick) {
+  if (!navigator.onLine) {
+    if (manualClick) {
+      addLog("Sem sinal de internet agora. Mantendo última previsão salva em cache.");
+    }
+    evaluateWeatherAhead(false);
+    return;
+  }
+
+  try {
+    const totalKm = getTotalKm();
+    const sampleKms = [0, 0.25, 0.5, 0.75, 1.0].map(f => f * totalKm);
+    const sampleCoords = sampleKms.map(sk => {
+      const pt = state.points.find(p => p.km >= sk) || state.points[state.points.length - 1];
+      const cp = CHECKPOINTS[state.day].reduce((best, cur) => Math.abs(cur.km - sk) < Math.abs(best.km - sk) ? cur : best);
+      return { km: sk, lat: pt.lat, lon: pt.lon, nearName: cp.name };
+    });
+
+    const results = await Promise.all(sampleCoords.map(async sc => {
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${sc.lat.toFixed(4)}&longitude=${sc.lon.toFixed(4)}&hourly=precipitation_probability,precipitation,windgusts_10m&forecast_days=2&timezone=America%2FSao_Paulo`;
+      const res = await fetch(url);
+      const data = await res.json();
+      return { km: sc.km, nearName: sc.nearName, hourly: data.hourly };
+    }));
+
+    state.weatherCache = {
+      day: state.day,
+      timestamp: Date.now(),
+      pointsForecast: results
+    };
+    localStorage.setItem('rota_luz_weather_cache', JSON.stringify(state.weatherCache));
+    if (manualClick) addLog("Radar meteorológico atualizado via internet para toda a etapa!");
+    evaluateWeatherAhead(true);
+  } catch (err) {
+    evaluateWeatherAhead(false);
+  }
+}
+
+function evaluateWeatherAhead(isFreshLive) {
+  const box = document.getElementById('weatherBox');
+  const tag = document.getElementById('weatherSourceTag');
+
+  if (!state.weatherCache || !state.weatherCache.pointsForecast || !state.weatherCache.pointsForecast.length) {
+    tag.textContent = "Sem cache salvo";
+    document.getElementById('wCacheAge').textContent = "Nunca";
+    return;
+  }
+
+  const ageMin = Math.round((Date.now() - state.weatherCache.timestamp) / 60000);
+  const usingCache = !navigator.onLine || !isFreshLive || ageMin > 10;
+
+  if (usingCache) {
+    tag.textContent = `📦 Cache (${ageMin} min atrás)`;
+    tag.className = 'pill cached';
+    document.getElementById('wCacheAge').textContent = ageMin < 60 ? `${ageMin}m atrás` : `${Math.floor(ageMin/60)}h${ageMin%60}m`;
+  } else {
+    tag.textContent = `🟢 Ao Vivo Agora`;
+    tag.className = 'pill active';
+    document.getElementById('wCacheAge').textContent = "Agora";
+  }
+
+  const spd = Math.max(8, state.currentSpeed || 13);
+  const lookAheadMin = 35;
+  const targetKm = Math.min(getTotalKm(), state.currentKm + (spd * (lookAheadMin / 60)));
+
+  const pf = state.weatherCache.pointsForecast.reduce((best, cur) =>
+    Math.abs(cur.km - targetKm) < Math.abs(best.km - targetKm) ? cur : best
+  );
+
+  const targetDate = new Date(Date.now() + lookAheadMin * 60000);
+  let hIdx = pf.hourly.time.findIndex(t => {
+    const d = new Date(t);
+    return d.getDate() === targetDate.getDate() && d.getHours() === targetDate.getHours();
+  });
+  if (hIdx < 0) hIdx = 0;
+
+  const rainProb = pf.hourly.precipitation_probability[hIdx] ?? 0;
+  const rainMm = pf.hourly.precipitation[hIdx] ?? 0;
+  const windGust = Math.round(pf.hourly.windgusts_10m[hIdx] ?? 0);
+
+  document.getElementById('wProbVal').textContent = `${rainProb}%`;
+  document.getElementById('wWindVal').textContent = `${windGust} km/h`;
+
+  const highRain = rainProb >= state.cfg.rainProbThresh;
+  const highWind = windGust >= state.cfg.windThresh;
+
+  if (highRain || highWind) {
+    box.classList.add('alert-now');
+    const titleDesc = highRain && highWind
+      ? `Chuva (${rainProb}%) e Vento (${windGust} km/h) em ~${lookAheadMin} min`
+      : highRain
+        ? `Alta chance de chuva (${rainProb}%) em ~${lookAheadMin} min`
+        : `Rajadas de vento forte (${windGust} km/h) em ~${lookAheadMin} min`;
+
+    document.getElementById('weatherMain').textContent = titleDesc;
+    document.getElementById('weatherSub').textContent = `Região de ${pf.nearName} (Km ${targetKm.toFixed(1)}) • Precipitação est.: ${rainMm} mm/h`;
+
+    const alertKey = `${pf.nearName}-${hIdx}-${highRain}-${highWind}-${usingCache}`;
+    if (state.lastWeatherAlertKey !== alertKey) {
+      state.lastWeatherAlertKey = alertKey;
+      fireWeatherVoiceAlert({ rainProb, windGust, highRain, highWind, nearName: pf.nearName, lookAheadMin, usingCache, ageMin });
+    }
+  } else {
+    box.classList.remove('alert-now');
+    document.getElementById('weatherMain').textContent = "Sem chuva forte ou vendaval à frente";
+    document.getElementById('weatherSub').textContent = `Próximo trecho (${pf.nearName}): ${rainProb}% chance de chuva • Rajadas de ${windGust} km/h.`;
+  }
+}
+
+function fireWeatherVoiceAlert({ rainProb, windGust, highRain, highWind, nearName, lookAheadMin, usingCache, ageMin }) {
+  playBeep(usingCache ? 'weather-cache' : 'weather-live');
+
+  let conditionText = "";
+  if (highRain && highWind) {
+    conditionText = `${rainProb}% de chance de chuva com rajadas de vento de ${windGust} quilômetros por hora`;
+  } else if (highRain) {
+    conditionText = `${rainProb}% de chance de chuva`;
+  } else {
+    conditionText = `rajadas de vento forte chegando a ${windGust} quilômetros por hora`;
+  }
+
+  let msg = "";
+  if (usingCache) {
+    const tempoCache = ageMin < 60 ? `há ${ageMin} minutos` : `há cerca de ${Math.round(ageMin/60)} horas`;
+    msg = `De acordo com a última atualização meteorológica salva ${tempoCache}, há ${conditionText} em aproximadamente ${lookAheadMin} minutos lá na frente, perto de ${nearName}. Já deixa a capa de chuva fácil!`;
+  } else {
+    msg = `Radar ao vivo na área: há ${conditionText} em aproximadamente ${lookAheadMin} minutos na região de ${nearName}. Prepare a proteção!`;
+  }
+
+  const badgeTitle = usingCache ? '📦 RADAR METEOROLÓGICO (CACHE OFFLINE)' : '⛈️ RADAR METEOROLÓGICO AO VIVO';
+  triggerAlert(badgeTitle, msg, 'normal');
+}
+
+function simulateWeatherAlert() {
+  unlockAudio(false);
+  window._simCacheToggle = !window._simCacheToggle;
+  fireWeatherVoiceAlert({
+    rainProb: 85,
+    windGust: 42,
+    highRain: true,
+    highWind: true,
+    nearName: state.day === 1 ? "Paraibuna" : "Taubaté",
+    lookAheadMin: 30,
+    usingCache: window._simCacheToggle,
+    ageMin: 48
+  });
+}
+
 // ================= CLIMBPRO & DESCENTPRO (HISTERESE) =================
 function analyzeSegments() {
   const pts = state.points;
@@ -990,38 +1250,26 @@ function analyzeSegments() {
   const climbs = [];
   const descents = [];
 
-  // 1. Detectar Subidas
   let inClimb = false, startIdx = 0, flatDist = 0;
   for (let i = 0; i < pts.length - 1; i++) {
-    const dk = (pts[i+1].km - pts[i].km) * 1000; // metros
+    const dk = (pts[i+1].km - pts[i].km) * 1000;
     if (dk <= 0) continue;
     const de = pts[i+1].elev - pts[i].elev;
     const grade = (de / dk) * 100;
 
     if (!inClimb) {
-      if (grade >= minG) {
-        inClimb = true;
-        startIdx = i;
-        flatDist = 0;
-      }
+      if (grade >= minG) { inClimb = true; startIdx = i; flatDist = 0; }
     } else {
       if (grade < -1.5) {
-        finalizeClimb(pts, startIdx, i, climbs);
-        inClimb = false;
+        finalizeClimb(pts, startIdx, i, climbs); inClimb = false;
       } else if (grade < 1.0) {
         flatDist += dk;
-        if (flatDist > 150) {
-          finalizeClimb(pts, startIdx, i, climbs);
-          inClimb = false;
-        }
-      } else {
-        flatDist = 0;
-      }
+        if (flatDist > 150) { finalizeClimb(pts, startIdx, i, climbs); inClimb = false; }
+      } else { flatDist = 0; }
     }
   }
   if (inClimb) finalizeClimb(pts, startIdx, pts.length - 1, climbs);
 
-  // 2. Detectar Descidas
   let inDesc = false, dStartIdx = 0, dFlatDist = 0;
   for (let i = 0; i < pts.length - 1; i++) {
     const dk = (pts[i+1].km - pts[i].km) * 1000;
@@ -1030,24 +1278,14 @@ function analyzeSegments() {
     const grade = (de / dk) * 100;
 
     if (!inDesc) {
-      if (grade <= -minG) {
-        inDesc = true;
-        dStartIdx = i;
-        dFlatDist = 0;
-      }
+      if (grade <= -minG) { inDesc = true; dStartIdx = i; dFlatDist = 0; }
     } else {
       if (grade > 1.5) {
-        finalizeDescent(pts, dStartIdx, i, descents);
-        inDesc = false;
+        finalizeDescent(pts, dStartIdx, i, descents); inDesc = false;
       } else if (grade > -1.0) {
         dFlatDist += dk;
-        if (dFlatDist > 150) {
-          finalizeDescent(pts, dStartIdx, i, descents);
-          inDesc = false;
-        }
-      } else {
-        dFlatDist = 0;
-      }
+        if (dFlatDist > 150) { finalizeDescent(pts, dStartIdx, i, descents); inDesc = false; }
+      } else { dFlatDist = 0; }
     }
   }
   if (inDesc) finalizeDescent(pts, dStartIdx, pts.length - 1, descents);
@@ -1062,14 +1300,7 @@ function finalizeClimb(pts, sIdx, eIdx, list) {
   const gain = pts[eIdx].elev - pts[sIdx].elev;
   if (lenKm >= 0.1 && gain >= 8) {
     const avgGrade = (gain / (lenKm * 1000)) * 100;
-    list.push({
-      id: list.length + 1,
-      startKm: pts[sIdx].km,
-      endKm: pts[eIdx].km,
-      lenKm,
-      gain: Math.round(gain),
-      avgGrade: avgGrade.toFixed(1)
-    });
+    list.push({ id: list.length + 1, startKm: pts[sIdx].km, endKm: pts[eIdx].km, lenKm, gain: Math.round(gain), avgGrade: avgGrade.toFixed(1) });
   }
 }
 
@@ -1078,14 +1309,7 @@ function finalizeDescent(pts, sIdx, eIdx, list) {
   const drop = pts[sIdx].elev - pts[eIdx].elev;
   if (lenKm >= 0.1 && drop >= 8) {
     const avgGrade = (drop / (lenKm * 1000)) * 100;
-    list.push({
-      id: list.length + 1,
-      startKm: pts[sIdx].km,
-      endKm: pts[eIdx].km,
-      lenKm,
-      drop: Math.round(drop),
-      avgGrade: avgGrade.toFixed(1)
-    });
+    list.push({ id: list.length + 1, startKm: pts[sIdx].km, endKm: pts[eIdx].km, lenKm, drop: Math.round(drop), avgGrade: avgGrade.toFixed(1) });
   }
 }
 
@@ -1147,7 +1371,7 @@ function getCurrentElev() {
 // ================= LOOP PRINCIPAL & RADARES =================
 function tickSecond() {
   if (state.simPlaying) {
-    const stepKm = (state.currentSpeed / 3600) * 30; // 30x speed
+    const stepKm = (state.currentSpeed / 3600) * 30;
     state.currentKm = Math.min(getTotalKm(), state.currentKm + stepKm);
     state.elapsedSec += 30;
     document.getElementById('simSlider').value = state.currentKm.toFixed(1);
@@ -1160,7 +1384,6 @@ function tickSecond() {
     state.elapsedSec += 1;
   }
 
-  // Timers nutricionais (avançam sempre que o pedal estiver em andamento ou simulação)
   const isMoving = state.simPlaying || state.currentSpeed > 2.0;
   const dt = state.simPlaying ? 30 : (isMoving ? 1 : 0);
 
@@ -1173,7 +1396,6 @@ function tickSecond() {
       }
     });
 
-    // Checagem dinâmica de ritmo/cronograma
     const paceCheckSec = state.cfg.paceIntervalMin * 60;
     if (state.elapsedSec - state.lastPaceCheckSec >= paceCheckSec) {
       state.lastPaceCheckSec = state.elapsedSec;
@@ -1187,7 +1409,6 @@ function tickSecond() {
 function onSimSlide(val) {
   state.currentKm = parseFloat(val);
   state.currentSpeed = 13.8;
-  // estima tempo decorrido proporcional ao ritmo de 13.5 km/h se deslizado manualmente
   state.elapsedSec = Math.round((state.currentKm / 13.5) * 3600);
   updateUI();
 }
@@ -1207,7 +1428,6 @@ function updateUI() {
   document.getElementById('statElev').textContent = Math.round(getCurrentElev()) + 'm';
   document.getElementById('simKmLabel').textContent = state.currentKm.toFixed(1) + ' km';
 
-  // Atualiza timers na tela
   ['water', 'iso', 'banana', 'gel'].forEach(k => {
     const s = Math.max(0, Math.round(state.timers[k]));
     const mm = String(Math.floor(s / 60)).padStart(2, '0');
@@ -1215,7 +1435,6 @@ function updateUI() {
     document.getElementById('timer-' + k).textContent = `${mm}:${ss}`;
   });
 
-  // Trava inteligente de cafeína no Dia 1 antes da Pousada da Marlene
   const spd = Math.max(8, state.currentSpeed || 12);
   const minToFinish = (remKm / spd) * 60;
   const gelCard = document.getElementById('card-gel');
@@ -1230,6 +1449,7 @@ function updateUI() {
   evaluateClimbRadar(spd);
   evaluateDescentRadar(spd);
   evaluateSchedulePace(spd);
+  evaluateWeatherAhead(false);
   renderChart();
 }
 
@@ -1239,7 +1459,6 @@ function evaluateClimbRadar(spd) {
   const km = state.currentKm;
   const look = state.cfg.lookaheadKm;
 
-  // Está dentro de uma subida agora?
   const active = state.climbs.find(c => km >= c.startKm && km <= c.endKm);
   if (active) {
     box.classList.add('active-now');
@@ -1253,7 +1472,6 @@ function evaluateClimbRadar(spd) {
     document.getElementById('climbSub').textContent = `Elevação restante: +${leftElev} m • Inclinação média: ${active.avgGrade}%`;
     document.getElementById('climbProg').style.width = pct + '%';
 
-    // Incentivo no meio da escalada (50%)
     if (active.lenKm >= 0.35 && pct >= 50 && pct < 65 && !state.announcedClimbMid.has(active.id)) {
       state.announcedClimbMid.add(active.id);
       const msg = state.voiceStyle === 'cinema'
@@ -1264,7 +1482,6 @@ function evaluateClimbRadar(spd) {
     return;
   }
 
-  // Cruzou o topo recentemente?
   const justFinished = state.climbs.find(c => km > c.endKm && km <= c.endKm + 0.25 && !state.announcedClimbTop.has(c.id));
   if (justFinished) {
     state.announcedClimbTop.add(justFinished.id);
@@ -1278,7 +1495,6 @@ function evaluateClimbRadar(spd) {
   box.classList.remove('active-now');
   document.getElementById('climbProg').style.width = '0%';
 
-  // Próxima subida à frente
   const next = state.climbs.find(c => c.startKm > km);
   if (!next) {
     document.getElementById('climbStatusTag').textContent = 'Serra vencida';
@@ -1380,7 +1596,7 @@ function evaluateSchedulePace(spd) {
   const estMinRemaining = (remToCp / Math.max(8, spd)) * 60;
   const etaClockMin = startMin + elapsedMin + estMinRemaining;
 
-  const diffMin = Math.round(targetClockMin - etaClockMin); // positivo = adiantado
+  const diffMin = Math.round(targetClockMin - etaClockMin);
 
   document.getElementById('cpName').textContent = `${nextCp.name} (Km ${nextCp.km.toFixed(1)})`;
   document.getElementById('cpTargetTime').textContent = formatClock(targetClockMin);
@@ -1500,7 +1716,7 @@ function unlockAudio(speakTest) {
   pill.classList.add('active');
   playBeep('nutri');
   if (speakTest) {
-    speakText("Copiloto Rota da Luz ativado! Tudo pronto para encarar a serra rumo a Aparecida.", 'hero');
+    speakText("Copiloto Rota da Luz ativado! Radar meteorológico, subidas e nutrição prontos para a viagem.", 'hero');
   }
 }
 
@@ -1521,10 +1737,11 @@ function playRandomSample() {
     { t: '⛰️ EXEMPLO SUBIDA', m: 'Atenção, guerreiro! Em 800 metros vem uma parede de 8%. Joga na coroinha, respira fundo e não olha para cima. Você vai passar por cima!', p: 'hero' },
     { t: '🪂 EXEMPLO DESCIDA', m: 'Recompensa merecida! Descida de 2 quilômetros à frente. Aproveita para descansar as pernas, beber água, mas olho vivo nas valetas do estradão!', p: 'normal' },
     { t: '⚡ EXEMPLO ISOTÔNICO', m: 'Hora do isotônico! Repõe esses sais aí antes que a câimbra mande um abraço na panturrilha.', p: 'normal' },
-    { t: '🌙 EXEMPLO CORTE CAFEÍNA', m: 'Alerta de sono! Faltam menos de 90 minutos para a Pousada da Marlene. Nada de cafeína agora, senão você vai ficar contando carneirinho em Redenção!', p: 'normal' }
+    { t: '📦 EXEMPLO RADAR CACHE', m: 'De acordo com a última atualização meteorológica salva há 40 minutos, há 80% de chance de chuva em aproximadamente 30 minutos lá na frente, perto de Paraibuna. Já deixa a capa de chuva fácil!', p: 'normal' }
   ];
   const s = samples[sampleIdx % samples.length];
   sampleIdx++;
+  playBeep(sampleIdx % 4 === 0 ? 'weather-cache' : 'nutri');
   triggerAlert(s.t, s.m, s.p);
 }
 
@@ -1550,23 +1767,39 @@ function playBeep(type) {
     const gain = ctx.createGain();
     osc.connect(gain);
     gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+
     if (type === 'climb') {
-      osc.frequency.setValueAtTime(520, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(880, ctx.currentTime + 0.35);
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(480, now);
+      osc.frequency.exponentialRampToValueAtTime(880, now + 0.35);
     } else if (type === 'descent') {
-      osc.frequency.setValueAtTime(780, ctx.currentTime);
-      osc.frequency.exponentialRampToValueAtTime(440, ctx.currentTime + 0.35);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(780, now);
+      osc.frequency.exponentialRampToValueAtTime(440, now + 0.35);
     } else if (type === 'fanfare') {
-      osc.frequency.setValueAtTime(523, ctx.currentTime);
-      osc.frequency.setValueAtTime(659, ctx.currentTime + 0.12);
-      osc.frequency.setValueAtTime(784, ctx.currentTime + 0.24);
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(523, now);
+      osc.frequency.setValueAtTime(659, now + 0.12);
+      osc.frequency.setValueAtTime(784, now + 0.24);
+    } else if (type === 'weather-live') {
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(980, now);
+      osc.frequency.setValueAtTime(740, now + 0.14);
+      osc.frequency.setValueAtTime(980, now + 0.28);
+    } else if (type === 'weather-cache') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(340, now);
+      osc.frequency.setValueAtTime(280, now + 0.18);
+      osc.frequency.setValueAtTime(340, now + 0.36);
     } else {
-      osc.frequency.setValueAtTime(660, ctx.currentTime);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(660, now);
     }
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    gain.gain.setValueAtTime(0.16, now);
+    gain.gain.exponentialRampToValueAtTime(0.001, now + 0.52);
     osc.start();
-    osc.stop(ctx.currentTime + 0.46);
+    osc.stop(now + 0.54);
   } catch (e) {}
 }
 
@@ -1577,7 +1810,7 @@ function triggerAlert(title, msg, persona) {
   document.getElementById('bannerText').textContent = msg;
   banner.classList.add('show');
   clearTimeout(window._bannerTimer);
-  window._bannerTimer = setTimeout(() => banner.classList.remove('show'), 9000);
+  window._bannerTimer = setTimeout(() => banner.classList.remove('show'), 9500);
   addLog(`<strong>${title}:</strong> ${msg}`);
   speakText(msg, persona);
 }
@@ -1588,7 +1821,7 @@ function addLog(html) {
   div.className = 'log-item';
   div.innerHTML = html;
   list.prepend(div);
-  while (list.children.length > 20) list.removeChild(list.lastChild);
+  while (list.children.length > 25) list.removeChild(list.lastChild);
 }
 
 function startGPS() {
